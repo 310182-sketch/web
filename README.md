@@ -1,34 +1,34 @@
-# Better Browse Chrome Extension
+# Better Browse Chrome 擴充功能
 
-Enhance your browsing experience with Focus, Dark, and Reader modes.
+透過專注模式、夜間模式與閱讀模式，提升您的網頁瀏覽體驗。
 
-## Features
+## 功能介紹
 
-*   **Focus Mode**: Applies a grayscale filter to the page to reduce distractions.
-*   **Dark Mode**: Smartly inverts colors to reduce eye strain, while keeping images and videos natural.
-*   **Reader Mode**: Increases font size and centers text for a comfortable reading experience.
+*   **專注模式 (Focus Mode)**：將網頁轉為灰階，減少色彩干擾，幫助您專注於內容。
+*   **夜間模式 (Dark Mode)**：智慧反轉網頁顏色，降低眼睛疲勞，同時保持圖片與影片的原始色彩。
+*   **閱讀模式 (Reader Mode)**：放大字體並將文字置中，提供更舒適的閱讀版面。
 
-## Installation
+## 安裝教學
 
-Since this extension is not yet on the Chrome Web Store, you need to install it manually:
+由於此擴充功能尚未上架至 Chrome 線上應用程式商店，您需要手動安裝：
 
-1.  Clone or download this repository to your local machine.
-2.  Open Google Chrome and navigate to `chrome://extensions/`.
-3.  Enable **Developer mode** in the top right corner.
-4.  Click **Load unpacked** in the top left corner.
-5.  Select the folder where you downloaded this repository.
+1.  下載此專案的程式碼到您的電腦中。
+2.  開啟 Google Chrome 瀏覽器，在網址列輸入 `chrome://extensions/` 並前往。
+3.  開啟右上角的 **「開發人員模式」 (Developer mode)**。
+4.  點擊左上角的 **「載入未封裝項目」 (Load unpacked)**。
+5.  選擇您剛剛下載的專案資料夾。
 
-## Usage
+## 使用說明
 
-1.  Click the **Better Browse** icon in your Chrome toolbar (it might be inside the puzzle piece menu).
-2.  Use the toggle switches to enable or disable modes:
-    *   **Focus Mode**: Toggle grayscale.
-    *   **Dark Mode**: Toggle dark theme.
-    *   **Reader Mode**: Toggle reading layout.
-3.  Settings are automatically saved and applied to the current tab.
+1.  點擊 Chrome 工具列上的 **Better Browse** 圖示（可能位於拼圖形狀的擴充功能選單中）。
+2.  使用開關來啟用或停用各項模式：
+    *   **Focus Mode**：切換灰階模式。
+    *   **Dark Mode**：切換深色主題。
+    *   **Reader Mode**：切換閱讀版面。
+3.  您的設定會自動儲存並套用到當前分頁。
 
-## Development
+## 開發相關
 
-*   `manifest.json`: Extension configuration.
-*   `popup.html` & `popup.js`: The user interface.
-*   `content.js` & `content.css`: The logic and styles injected into web pages.
+*   `manifest.json`：擴充功能設定檔。
+*   `popup.html` & `popup.js`：使用者介面與邏輯。
+*   `content.js` & `content.css`：注入網頁的邏輯與樣式。
