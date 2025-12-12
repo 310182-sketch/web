@@ -17,6 +17,7 @@
 
     <nav class="tabs">
       <button class="tab-btn active" data-tab="current">當前頁面</button>
+      <button class="tab-btn" data-tab="clipboard">📋 剪貼簿</button>
       <button class="tab-btn" data-tab="highlights">📌 高亮</button>
       <button class="tab-btn" data-tab="summary">🤖 摘要</button>
       <button class="tab-btn" data-tab="all">所有筆記</button>
@@ -37,6 +38,18 @@
         <div class="note-meta">
           <span id="wordCount">0 字</span>
           <span id="lastSaved"></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="tab-content hidden" id="clipboardTab">
+      <div class="clipboard-container">
+        <div class="clipboard-header">
+          <span id="clipboardCount">0 條記錄</span>
+          <button id="clearClipboardBtn" class="toolbar-btn-small">🗑️ 清空</button>
+        </div>
+        <div id="clipboardList" class="clipboard-list">
+          <div class="empty-state">尚無剪貼簿記錄<br><small>在網頁上複製文字即可自動儲存</small></div>
         </div>
       </div>
     </div>

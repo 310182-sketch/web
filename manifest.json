@@ -1,15 +1,17 @@
 {
   "manifest_version": 3,
   "name": "Better Browse",
-  "version": "2.5",
-  "description": "Enhance your browsing experience with Focus, Dark, Reader modes, Element Zapper, Read Later, Web Notes, Highlights, and AI Summary.",
+  "version": "2.6",
+  "description": "Enhance your browsing experience with Focus, Dark, Reader modes, Element Zapper, Read Later, Web Notes, Highlights, AI Summary, and Clipboard History.",
   "permissions": [
     "activeTab",
     "storage",
     "scripting",
     "contextMenus",
     "sidePanel",
-    "unlimitedStorage"
+    "unlimitedStorage",
+    "clipboardRead",
+    "clipboardWrite"
   ],
   "host_permissions": [
     "<all_urls>"
@@ -23,7 +25,7 @@
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["highlighter.js", "summarizer.js", "notes-manager.js", "content.js"],
+      "js": ["clipboard-manager.js", "highlighter.js", "summarizer.js", "notes-manager.js", "content.js"],
       "css": ["content.css", "highlighter.css"]
     }
   ]

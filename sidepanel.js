@@ -74,6 +74,16 @@ function setupEventListeners() {
         event.data.type === 'BB_HIGHLIGHT_DELETED') {
       loadHighlights();
     }
+    if (event.data.type === 'BB_CLIPBOARD_UPDATED') {
+      loadClipboard();
+    }
+  });
+
+  // 清空剪貼簿
+  document.getElementById('clearClipboardBtn').addEventListener('click', async () => {
+    if (confirm('確定要清空所有剪貼簿記錄嗎？')) {
+      await clearClipboard();
+    }
   });
 }
 
@@ -93,6 +103,8 @@ function switchTab(tab) {
     loadHighlights();
   } else if (tab === 'summary') {
     loadSummary();
+  } else if (tab === 'clipboard') {
+    loadClipboard();
   }
 }
 
