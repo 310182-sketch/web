@@ -1,0 +1,27 @@
+/* Focus Mode: Grayscale */
+.bb-focus-mode {
+  filter: grayscale(100%) !important;
+}
+
+/* Dark Mode: Smart Invert */
+html.bb-dark-mode {
+  filter: invert(1) hue-rotate(180deg) !important;
+}
+
+/* Revert images and videos so they look normal in dark mode */
+html.bb-dark-mode img, 
+html.bb-dark-mode video,
+html.bb-dark-mode iframe,
+html.bb-dark-mode canvas {
+  filter: invert(1) hue-rotate(180deg) !important;
+}
+
+/* Reader Mode: Large Text & Centered */
+.bb-reader-mode p {
+  font-size: 20px !important;
+  line-height: 1.6 !important;
+  max-width: 800px !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  color: #333 !important; /* Ensure text is readable */
+}

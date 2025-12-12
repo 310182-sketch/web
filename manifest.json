@@ -1,0 +1,21 @@
+{
+  "manifest_version": 3,
+  "name": "Better Browse",
+  "version": "1.0",
+  "description": "Enhance your browsing experience with Focus, Dark, and Reader modes.",
+  "permissions": [
+    "activeTab",
+    "storage",
+    "scripting"
+  ],
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "css": ["content.css"]
+    }
+  ]
+}

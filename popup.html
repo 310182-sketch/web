@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Better Browse</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      width: 250px;
+      padding: 15px;
+      background-color: #f4f4f9;
+      color: #333;
+    }
+    h1 {
+      font-size: 18px;
+      margin-top: 0;
+      margin-bottom: 20px;
+      text-align: center;
+      color: #2c3e50;
+      border-bottom: 2px solid #ddd;
+      padding-bottom: 10px;
+    }
+    .toggle-container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 15px;
+      background: white;
+      padding: 10px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    .toggle-label {
+      font-size: 14px;
+      font-weight: 500;
+    }
+    /* Toggle Switch Styles */
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 40px;
+      height: 20px;
+    }
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #ccc;
+      transition: .4s;
+      border-radius: 34px;
+    }
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 16px;
+      width: 16px;
+      left: 2px;
+      bottom: 2px;
+      background-color: white;
+      transition: .4s;
+      border-radius: 50%;
+    }
+    input:checked + .slider {
+      background-color: #2196F3;
+    }
+    input:checked + .slider:before {
+      transform: translateX(20px);
+    }
+  </style>
+</head>
+<body>
+  <h1>Better Browse</h1>
+
+  <div class="toggle-container">
+    <span class="toggle-label">Focus Mode</span>
+    <label class="switch">
+      <input type="checkbox" id="focusMode">
+      <span class="slider"></span>
+    </label>
+  </div>
+
+  <div class="toggle-container">
+    <span class="toggle-label">Dark Mode</span>
+    <label class="switch">
+      <input type="checkbox" id="darkMode">
+      <span class="slider"></span>
+    </label>
+  </div>
+
+  <div class="toggle-container">
+    <span class="toggle-label">Reader Mode</span>
+    <label class="switch">
+      <input type="checkbox" id="readerMode">
+      <span class="slider"></span>
+    </label>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
