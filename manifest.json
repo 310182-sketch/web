@@ -1,21 +1,29 @@
 {
   "manifest_version": 3,
   "name": "Better Browse",
-  "version": "1.5",
-  "description": "Enhance your browsing experience with Focus, Dark, Reader modes, Element Zapper, and Read Later.",
+  "version": "2.0",
+  "description": "Enhance your browsing experience with Focus, Dark, Reader modes, Element Zapper, Read Later, and Web Notes.",
   "permissions": [
     "activeTab",
     "storage",
     "scripting",
-    "contextMenus"
+    "contextMenus",
+    "sidePanel",
+    "unlimitedStorage"
+  ],
+  "host_permissions": [
+    "<all_urls>"
   ],
   "action": {
     "default_popup": "popup.html"
   },
+  "side_panel": {
+    "default_path": "sidepanel.html"
+  },
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["content.js"],
+      "js": ["notes-manager.js", "content.js"],
       "css": ["content.css"]
     }
   ]

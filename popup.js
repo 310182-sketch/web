@@ -2,6 +2,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const focusModeCheckbox = document.getElementById('focusMode');
   const darkModeCheckbox = document.getElementById('darkMode');
   const readerModeCheckbox = document.getElementById('readerMode');
+  const openNotesBtn = document.getElementById('openNotesBtn');
   const zapperToggle = document.getElementById('zapperToggle');
   const savePageBtn = document.getElementById('savePageBtn');
   const readLaterList = document.getElementById('readLaterList');
