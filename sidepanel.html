@@ -16,11 +16,23 @@
     </header>
 
     <nav class="tabs">
-      <button class="tab-btn active" data-tab="current">當前頁面</button>
-      <button class="tab-btn" data-tab="clipboard">📋 剪貼簿</button>
-      <button class="tab-btn" data-tab="highlights">📌 高亮</button>
-      <button class="tab-btn" data-tab="summary">🤖 摘要</button>
-      <button class="tab-btn" data-tab="all">所有筆記</button>
+      <div class="tab-group">
+        <div class="tab-group-label">內容類</div>
+        <button class="tab-btn active" data-tab="current">📝 當前</button>
+        <button class="tab-btn" data-tab="clipboard">📋 剪貼簿</button>
+        <button class="tab-btn" data-tab="highlights">📌 高亮</button>
+        <button class="tab-btn" data-tab="summary">🤖 摘要</button>
+        <button class="tab-btn" data-tab="all">📚 筆記</button>
+      </div>
+      <div class="tab-group">
+        <div class="tab-group-label">生產力</div>
+        <button class="tab-btn" data-tab="todo">✓ 待辦</button>
+        <button class="tab-btn" data-tab="workspace">📂 工作區</button>
+      </div>
+      <div class="tab-group">
+        <div class="tab-group-label">工具</div>
+        <button class="tab-btn" data-tab="tools">🔧 工具</button>
+      </div>
     </nav>
 
     <div class="tab-content" id="currentTab">
@@ -82,6 +94,107 @@
           <span id="originalLength"></span>
           <span id="compressionRatio"></span>
           <span id="summaryMethod"></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="tab-content hidden" id="todoTab">
+      <div class="todo-container">
+        <div class="todo-header">
+          <div class="todo-stats">
+            <span id="todoStats">0 個任務</span>
+          </div>
+          <div class="todo-actions">
+            <button id="addTodoBtn" class="toolbar-btn-small add-btn">➕ 新增</button>
+            <button id="clearCompletedBtn" class="toolbar-btn-small">🗑️ 清除已完成</button>
+          </div>
+        </div>
+        <div class="todo-filters">
+          <button class="filter-btn active" data-filter="all">全部</button>
+          <button class="filter-btn" data-filter="pending">待完成</button>
+          <button class="filter-btn" data-filter="completed">已完成</button>
+        </div>
+        <div id="todoList" class="todo-list">
+          <div class="empty-state">尚無待辦事項<br><small>點擊「➕ 新增」來建立任務</small></div>
+        </div>
+      </div>
+      <div id="todoForm" class="todo-form hidden">
+        <h3>新增任務</h3>
+        <input type="text" id="todoTitle" placeholder="任務標題" required>
+        <textarea id="todoDescription" placeholder="任務描述（選填）" rows="3"></textarea>
+        <div class="form-row">
+          <select id="todoCategory">
+            <option value="工作">💼 工作</option>
+            <option value="個人">🏠 個人</option>
+            <option value="學習">📚 學習</option>
+            <option value="其他">📌 其他</option>
+          </select>
+          <select id="todoPriority">
+            <option value="低">低</option>
+            <option value="中" selected>中</option>
+            <option value="高">高</option>
+          </select>
+        </div>
+        <input type="date" id="todoDueDate">
+        <div class="form-buttons">
+          <button id="saveTodoBtn" class="toolbar-btn">✔️ 儲存</button>
+          <button id="cancelTodoBtn" class="toolbar-btn-small">✖️ 取消</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="tab-content hidden" id="workspaceTab">
+      <div class="workspace-container">
+        <div class="workspace-header">
+          <div class="workspace-current">
+            <span id="currentWindowInfo">0 個分頁</span>
+          </div>
+          <button id="saveWorkspaceBtn" class="toolbar-btn-small add-btn">💾 儲存當前</button>
+        </div>
+        <div id="workspaceList" class="workspace-list">
+          <div class="empty-state">尚無已儲存的工作區<br><small>點擊「💾 儲存當前」來儲存當前視窗的所有分頁</small></div>
+        </div>
+      </div>
+      <div id="workspaceForm" class="workspace-form hidden">
+        <h3>儲存工作區</h3>
+        <input type="text" id="workspaceName" placeholder="工作區名稱" required>
+        <textarea id="workspaceDescription" placeholder="描述（選填）" rows="2"></textarea>
+        <div class="form-buttons">
+          <button id="saveWorkspaceConfirmBtn" class="toolbar-btn">✔️ 儲存</button>
+          <button id="cancelWorkspaceBtn" class="toolbar-btn-small">✖️ 取消</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="tab-content hidden" id="toolsTab">
+      <div class="tools-container">
+        <div class="tool-section">
+          <h3>📦 JSON/XML 格式化</h3>
+          <textarea id="formatterInput" placeholder="貼上 JSON, XML, CSS 或 HTML..." rows="8"></textarea>
+          <div class="tool-actions">
+            <select id="formatType">
+              <option value="auto">自動識別</option>
+              <option value="json">JSON</option>
+              <option value="xml">XML</option>
+              <option value="css">CSS</option>
+              <option value="html">HTML</option>
+            </select>
+            <button id="formatBtn" class="toolbar-btn">✨ 格式化</button>
+            <button id="minifyBtn" class="toolbar-btn-small">🗃️ 壓縮</button>
+            <button id="copyFormattedBtn" class="toolbar-btn-small">📋 複製</button>
+          </div>
+          <div id="formatterOutput" class="formatter-output"></div>
+        </div>
+        
+        <div class="tool-section">
+          <h3>🔲 QR Code 生成器</h3>
+          <input type="text" id="qrcodeInput" placeholder="輸入文字或網址...">
+          <div class="tool-actions">
+            <button id="generateQRBtn" class="toolbar-btn">🌟 生成 QR Code</button>
+            <button id="generatePageQRBtn" class="toolbar-btn-small">🔗 當前頁面</button>
+            <button id="downloadQRBtn" class="toolbar-btn-small hidden">💾 下載</button>
+          </div>
+          <div id="qrcodeOutput" class="qrcode-output"></div>
         </div>
       </div>
     </div>

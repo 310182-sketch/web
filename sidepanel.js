@@ -77,6 +77,12 @@ function setupEventListeners() {
     if (event.data.type === 'BB_CLIPBOARD_UPDATED') {
       loadClipboard();
     }
+    if (event.data.type === 'BB_TODO_UPDATED') {
+      loadTodos();
+    }
+    if (event.data.type === 'BB_WORKSPACE_UPDATED') {
+      loadWorkspaces();
+    }
   });
 
   // 清空剪貼簿
@@ -84,6 +90,77 @@ function setupEventListeners() {
     if (confirm('確定要清空所有剪貼簿記錄嗎？')) {
       await clearClipboard();
     }
+  });
+
+  // 待辦事項事件
+  document.getElementById('addTodoBtn').addEventListener('click', () => {
+    document.querySelector('.todo-container').classList.add('hidden');
+    document.getElementById('todoForm').classList.remove('hidden');
+  });
+
+  document.getElementById('cancelTodoBtn').addEventListener('click', () => {
+    document.getElementById('todoForm').classList.add('hidden');
+    document.querySelector('.todo-container').classList.remove('hidden');
+    clearTodoForm();
+  });
+
+  document.getElementById('saveTodoBtn').addEventListener('click', async () => {
+    await saveTodo();
+  });
+
+  document.getElementById('clearCompletedBtn').addEventListener('click', async () => {
+    if (confirm('確定要清除所有已完成的待辦事項嗎？')) {
+      await clearCompletedTodos();
+    }
+  });
+
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      e.target.classList.add('active');
+      loadTodos(e.target.dataset.filter);
+    });
+  });
+
+  // 工作區事件
+  document.getElementById('saveWorkspaceBtn').addEventListener('click', () => {
+    document.querySelector('.workspace-container').classList.add('hidden');
+    document.getElementById('workspaceForm').classList.remove('hidden');
+  });
+
+  document.getElementById('cancelWorkspaceBtn').addEventListener('click', () => {
+    document.getElementById('workspaceForm').classList.add('hidden');
+    document.querySelector('.workspace-container').classList.remove('hidden');
+    clearWorkspaceForm();
+  });
+
+  document.getElementById('saveWorkspaceConfirmBtn').addEventListener('click', async () => {
+    await saveWorkspace();
+  });
+
+  // 工具事件
+  document.getElementById('formatBtn').addEventListener('click', () => {
+    formatText();
+  });
+
+  document.getElementById('minifyBtn').addEventListener('click', () => {
+    minifyJSON();
+  });
+
+  document.getElementById('copyFormattedBtn').addEventListener('click', () => {
+    copyFormattedText();
+  });
+
+  document.getElementById('generateQRBtn').addEventListener('click', () => {
+    generateQRCode();
+  });
+
+  document.getElementById('generatePageQRBtn').addEventListener('click', async () => {
+    await generatePageQR();
+  });
+
+  document.getElementById('downloadQRBtn').addEventListener('click', () => {
+    downloadQR();
   });
 }
 
@@ -105,6 +182,13 @@ function switchTab(tab) {
     loadSummary();
   } else if (tab === 'clipboard') {
     loadClipboard();
+  } else if (tab === 'todo') {
+    loadTodos();
+  } else if (tab === 'workspace') {
+    loadWorkspaces();
+    updateCurrentWindowInfo();
+  } else if (tab === 'tools') {
+    // 工具標籤無需載入
   }
 }
 
@@ -508,4 +592,402 @@ async function generateSummary() {
     btn.textContent = '🤖 生成摘要';
   }
 }
+
+// ===== 待辦事項功能 =====
+
+async function loadTodos(filter = 'all') {
+  const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+  if (!tabs[0]) return;
+
+  const results = await chrome.scripting.executeScript({
+    target: { tabId: tabs[0].id },
+    func: async (filterType) => {
+      if (filterType === 'pending') {
+        return await window.bbTodo?.getPendingTodos() || [];
+      } else if (filterType === 'completed') {
+        return await window.bbTodo?.getCompletedTodos() || [];
+      } else {
+        return await window.bbTodo?.getAllTodos() || [];
+      }
+    },
+    args: [filter]
+  });
+
+  const todos = results[0]?.result || [];
+  await renderTodos(todos);
+  await updateTodoStats();
+}
+
+function renderTodos(todos) {
+  const todoList = document.getElementById('todoList');
+  
+  if (todos.length === 0) {
+    todoList.innerHTML = '<div class="empty-state">尚無待辦事項<br><small>點擊「➕ 新增」來建立任務</small></div>';
+    return;
+  }
+
+  todoList.innerHTML = todos.map(todo => {
+    const dueDate = todo.dueDate ? new Date(todo.dueDate) : null;
+    const isOverdue = dueDate && dueDate < new Date() && !todo.completed;
+    
+    return `
+      <div class="todo-item ${todo.completed ? 'completed' : ''}" data-id="${todo.id}">
+        <div class="todo-item-header">
+          <input type="checkbox" class="todo-checkbox" ${todo.completed ? 'checked' : ''}>
+          <div class="todo-title">${todo.title}</div>
+          <span class="todo-priority ${todo.priority}">${todo.priority}</span>
+        </div>
+        ${todo.description ? `<div class="todo-description">${todo.description}</div>` : ''}
+        <div class="todo-meta">
+          <div>
+            <span class="todo-category">${todo.category}</span>
+            ${dueDate ? `<span class="todo-due ${isOverdue ? 'overdue' : ''}">${formatTodoDate(dueDate)}</span>` : ''}
+          </div>
+          <div class="todo-actions-btn">
+            <button class="todo-delete-btn" title="刪除">🗑️</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  // 綁定事件
+  todoList.querySelectorAll('.todo-item').forEach((item, index) => {
+    const todo = todos[index];
+    
+    // 切換完成狀態
+    item.querySelector('.todo-checkbox').addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (tabs[0]) {
+        await chrome.scripting.executeScript({
+          target: { tabId: tabs[0].id },
+          func: (id) => window.bbTodo?.toggleComplete(id),
+          args: [todo.id]
+        });
+        await loadTodos(document.querySelector('.filter-btn.active').dataset.filter);
+      }
+    });
+
+    // 刪除
+    item.querySelector('.todo-delete-btn').addEventListener('click', async (e) => {
+      e.stopPropagation();
+      if (confirm('確定要刪除這個待辦事項嗎？')) {
+        const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+        if (tabs[0]) {
+          await chrome.scripting.executeScript({
+            target: { tabId: tabs[0].id },
+            func: (id) => window.bbTodo?.deleteTodo(id),
+            args: [todo.id]
+          });
+          await loadTodos(document.querySelector('.filter-btn.active').dataset.filter);
+        }
+      }
+    });
+  });
+}
+
+async function updateTodoStats() {
+  const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+  if (!tabs[0]) return;
+
+  const results = await chrome.scripting.executeScript({
+    target: { tabId: tabs[0].id },
+    func: async () => window.bbTodo?.getStats()
+  });
+
+  const stats = results[0]?.result;
+  if (stats) {
+    document.getElementById('todoStats').textContent = `${stats.pending} 待完成 / ${stats.total} 總計`;
+  }
+}
+
+async function saveTodo() {
+  const title = document.getElementById('todoTitle').value.trim();
+  if (!title) {
+    alert('請輸入任務標題');
+    return;
+  }
+
+  const todoData = {
+    title: title,
+    description: document.getElementById('todoDescription').value.trim(),
+    category: document.getElementById('todoCategory').value,
+    priority: document.getElementById('todoPriority').value,
+    dueDate: document.getElementById('todoDueDate').value || null
+  };
+
+  const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+  if (tabs[0]) {
+    await chrome.scripting.executeScript({
+      target: { tabId: tabs[0].id },
+      func: (data) => window.bbTodo?.addTodo(data),
+      args: [todoData]
+    });
+
+    document.getElementById('todoForm').classList.add('hidden');
+    document.querySelector('.todo-container').classList.remove('hidden');
+    clearTodoForm();
+    await loadTodos();
+  }
+}
+
+async function clearCompletedTodos() {
+  const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+  if (tabs[0]) {
+    await chrome.scripting.executeScript({
+      target: { tabId: tabs[0].id },
+      func: () => window.bbTodo?.clearCompleted()
+    });
+    await loadTodos();
+  }
+}
+
+function clearTodoForm() {
+  document.getElementById('todoTitle').value = '';
+  document.getElementById('todoDescription').value = '';
+  document.getElementById('todoCategory').value = '工作';
+  document.getElementById('todoPriority').value = '中';
+  document.getElementById('todoDueDate').value = '';
+}
+
+function formatTodoDate(date) {
+  const today = new Date();
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  
+  today.setHours(0, 0, 0, 0);
+  tomorrow.setHours(0, 0, 0, 0);
+  date.setHours(0, 0, 0, 0);
+  
+  if (date < today) return '已逾期';
+  if (date.getTime() === today.getTime()) return '今天';
+  if (date.getTime() === tomorrow.getTime()) return '明天';
+  
+  return date.toLocaleDateString('zh-TW', { month: 'short', day: 'numeric' });
+}
+
+// ===== 工作區功能 =====
+
+async function loadWorkspaces() {
+  const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+  if (!tabs[0]) return;
+
+  const results = await chrome.scripting.executeScript({
+    target: { tabId: tabs[0].id },
+    func: async () => window.bbWorkspace?.getAllWorkspaces() || []
+  });
+
+  const workspaces = results[0]?.result || [];
+  renderWorkspaces(workspaces);
+}
+
+function renderWorkspaces(workspaces) {
+  const workspaceList = document.getElementById('workspaceList');
+  
+  if (workspaces.length === 0) {
+    workspaceList.innerHTML = '<div class="empty-state">尚無已儲存的工作區<br><small>點擊「💾 儲存當前」來儲存當前視窗的所有分頁</small></div>';
+    return;
+  }
+
+  workspaceList.innerHTML = workspaces.map(workspace => {
+    return `
+      <div class="workspace-item" data-id="${workspace.id}">
+        <div class="workspace-name">${workspace.name}</div>
+        ${workspace.description ? `<div class="workspace-description">${workspace.description}</div>` : ''}
+        <div class="workspace-meta">
+          <span>${workspace.tabCount} 個分頁</span>
+          <span>${formatWorkspaceTime(workspace.createdAt)}</span>
+        </div>
+        <div class="workspace-tabs">
+          ${workspace.tabs.slice(0, 3).map(tab => `<div class="workspace-tab-item">📄 ${tab.title}</div>`).join('')}
+          ${workspace.tabs.length > 3 ? `<div class="workspace-tab-item">... 及其他 ${workspace.tabs.length - 3} 個分頁</div>` : ''}
+        </div>
+        <div class="workspace-actions">
+          <button class="workspace-restore-btn">🔄 恢復</button>
+          <button class="workspace-delete-btn">🗑️ 刪除</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  // 綁定事件
+  workspaceList.querySelectorAll('.workspace-item').forEach((item, index) => {
+    const workspace = workspaces[index];
+    
+    item.querySelector('.workspace-restore-btn').addEventListener('click', async () => {
+      const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (tabs[0]) {
+        await chrome.scripting.executeScript({
+          target: { tabId: tabs[0].id },
+          func: (id) => window.bbWorkspace?.restoreWorkspace(id, false),
+          args: [workspace.id]
+        });
+      }
+    });
+
+    item.querySelector('.workspace-delete-btn').addEventListener('click', async () => {
+      if (confirm(`確定要刪除工作區「${workspace.name}」嗎？`)) {
+        const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+        if (tabs[0]) {
+          await chrome.scripting.executeScript({
+            target: { tabId: tabs[0].id },
+            func: (id) => window.bbWorkspace?.deleteWorkspace(id),
+            args: [workspace.id]
+          });
+          await loadWorkspaces();
+        }
+      }
+    });
+  });
+}
+
+async function updateCurrentWindowInfo() {
+  const tabs = await chrome.tabs.query({ currentWindow: true });
+  document.getElementById('currentWindowInfo').textContent = `${tabs.length} 個分頁`;
+}
+
+async function saveWorkspace() {
+  const name = document.getElementById('workspaceName').value.trim();
+  if (!name) {
+    alert('請輸入工作區名稱');
+    return;
+  }
+
+  const description = document.getElementById('workspaceDescription').value.trim();
+
+  const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+  if (tabs[0]) {
+    await chrome.scripting.executeScript({
+      target: { tabId: tabs[0].id },
+      func: (name, desc) => window.bbWorkspace?.saveCurrentWorkspace(name, desc),
+      args: [name, description]
+    });
+
+    document.getElementById('workspaceForm').classList.add('hidden');
+    document.querySelector('.workspace-container').classList.remove('hidden');
+    clearWorkspaceForm();
+    await loadWorkspaces();
+  }
+}
+
+function clearWorkspaceForm() {
+  document.getElementById('workspaceName').value = '';
+  document.getElementById('workspaceDescription').value = '';
+}
+
+function formatWorkspaceTime(timestamp) {
+  const date = new Date(timestamp);
+  return date.toLocaleDateString('zh-TW', { month: 'short', day: 'numeric' });
+}
+
+// ===== 工具功能 =====
+
+let currentQRDataUrl = null;
+
+function formatText() {
+  const input = document.getElementById('formatterInput').value;
+  const formatType = document.getElementById('formatType').value;
+  const output = document.getElementById('formatterOutput');
+
+  if (!input.trim()) {
+    output.textContent = '請輸入要格式化的內容';
+    return;
+  }
+
+  const formatter = new Formatter();
+  const result = formatter.format(input, formatType === 'auto' ? null : formatType);
+
+  if (result.success) {
+    output.textContent = result.formatted;
+    output.style.color = '#2c3e50';
+  } else {
+    output.textContent = `錯誤: ${result.error}`;
+    output.style.color = '#e74c3c';
+  }
+}
+
+function minifyJSON() {
+  const input = document.getElementById('formatterInput').value;
+  const output = document.getElementById('formatterOutput');
+
+  if (!input.trim()) {
+    output.textContent = '請輸入要壓縮的 JSON';
+    return;
+  }
+
+  const formatter = new Formatter();
+  const result = formatter.minifyJSON(input);
+
+  if (result.success) {
+    output.textContent = result.minified;
+    output.style.color = '#2c3e50';
+  } else {
+    output.textContent = `錯誤: ${result.error}`;
+    output.style.color = '#e74c3c';
+  }
+}
+
+function copyFormattedText() {
+  const output = document.getElementById('formatterOutput');
+  const text = output.textContent;
+
+  if (!text || text.includes('錯誤') || text.includes('請輸入')) {
+    alert('沒有可複製的內容');
+    return;
+  }
+
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('copyFormattedBtn');
+    const originalText = btn.textContent;
+    btn.textContent = '✓ 已複製';
+    setTimeout(() => {
+      btn.textContent = originalText;
+    }, 2000);
+  });
+}
+
+function generateQRCode() {
+  const input = document.getElementById('qrcodeInput').value.trim();
+  const output = document.getElementById('qrcodeOutput');
+
+  if (!input) {
+    output.innerHTML = '<div style="color: #95a5a6;">請輸入文字或網址</div>';
+    return;
+  }
+
+  const generator = new QRCodeGenerator();
+  const url = generator.generateQRCodeUrl(input, 256);
+  
+  output.innerHTML = `<img src="${url}" alt="QR Code">`;
+  currentQRDataUrl = url;
+  document.getElementById('downloadQRBtn').classList.remove('hidden');
+}
+
+async function generatePageQR() {
+  const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+  if (!tabs[0]) return;
+
+  const output = document.getElementById('qrcodeOutput');
+  const generator = new QRCodeGenerator();
+  const url = generator.generateQRCodeUrl(tabs[0].url, 256);
+  
+  output.innerHTML = `<img src="${url}" alt="QR Code">`;
+  currentQRDataUrl = url;
+  document.getElementById('downloadQRBtn').classList.remove('hidden');
+  document.getElementById('qrcodeInput').value = tabs[0].url;
+}
+
+function downloadQR() {
+  if (!currentQRDataUrl) {
+    alert('請先生成 QR Code');
+    return;
+  }
+
+  const link = document.createElement('a');
+  link.href = currentQRDataUrl;
+  link.download = 'qrcode.png';
+  link.click();
+}
+
 
