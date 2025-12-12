@@ -43,7 +43,8 @@ document.addEventListener('DOMContentLoaded', () => {
   focusModeCheckbox.addEventListener('change', updateSettings);
   darkModeCheckbox.addEventListener('change', updateSettings);
   readerModeCheckbox.addEventListener('change', updateSettings);
-Open Notes Side Panel
+
+  // Open Notes Side Panel
   openNotesBtn.addEventListener('click', async () => {
     const tabs = await chrome.tabs.query({active: true, currentWindow: true});
     if (tabs[0]) {
