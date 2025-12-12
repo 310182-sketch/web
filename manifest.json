@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Better Browse",
-  "version": "2.7",
+  "version": "2.7.1",
   "description": "Enhance your browsing experience with Focus, Dark, Reader modes, Notes, Highlights, AI Summary, Clipboard History, Todo Management, Developer Tools, and Workspace Manager.",
   "permissions": [
     "activeTab",
