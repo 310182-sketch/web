@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Better Browse - 筆記</title>
+  <link rel="stylesheet" href="sidepanel.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>📝 網頁筆記</h1>
+      <div class="header-info">
+        <span id="currentUrl" class="url-display">載入中...</span>
+      </div>
+    </header>
+
+    <nav class="tabs">
+      <button class="tab-btn active" data-tab="current">當前頁面</button>
+      <button class="tab-btn" data-tab="highlights">📌 高亮</button>
+      <button class="tab-btn" data-tab="summary">🤖 摘要</button>
+      <button class="tab-btn" data-tab="all">所有筆記</button>
+    </nav>
+
+    <div class="tab-content" id="currentTab">
+      <div class="note-editor">
+        <div class="editor-toolbar">
+          <button id="saveBtn" class="toolbar-btn" title="儲存">💾 儲存</button>
+          <button id="clearBtn" class="toolbar-btn" title="清除">🗑️ 清除</button>
+          <span id="saveStatus" class="save-status"></span>
+        </div>
+        <textarea 
+          id="noteContent" 
+          placeholder="在此輸入筆記...&#10;&#10;支援 Markdown 語法&#10;自動儲存功能已啟用"
+          autofocus
+        ></textarea>
+        <div class="note-meta">
+          <span id="wordCount">0 字</span>
+          <span id="lastSaved"></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="tab-content hidden" id="highlightsTab">
+      <div class="highlights-container">
+        <div class="highlights-header">
+          <span id="highlightCount">0 個高亮</span>
+        </div>
+        <div id="highlightsList" class="highlights-list">
+          <div class="empty-state">尚無高亮標記<br><small>在網頁上選取文字即可標記</small></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tab-content hidden" id="summaryTab">
+      <div class="summary-container">
+        <div class="summary-toolbar">
+          <select id="summaryLength">
+            <option value="short">簡短</option>
+            <option value="medium" selected>中等</option>
+            <option value="long">詳細</option>
+          </select>
+          <button id="generateSummaryBtn" class="toolbar-btn">🤖 生成摘要</button>
+        </div>
+        <div id="summaryContent" class="summary-box">
+          <div class="empty-state">點擊「生成摘要」開始</div>
+        </div>
+        <div id="summaryStats" class="summary-stats" style="display: none;">
+          <span id="originalLength"></span>
+          <span id="compressionRatio"></span>
+          <span id="summaryMethod"></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="tab-content hidden" id="allTab">
+      <div class="notes-list-header">
+        <input type="text" id="searchNotes" placeholder="🔍 搜尋筆記..." />
+        <button id="exportBtn" class="toolbar-btn">📥 匯出全部</button>
+      </div>
+      <div id="notesList" class="notes-list">
+        <div class="empty-state">尚無筆記</div>
+      </div>
+    </div>
+  </div>
+
+  <script src="notes-manager.js"></script>
+  <script src="sidepanel.js"></script>
+</body>
+</html>

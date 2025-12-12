@@ -1,0 +1,90 @@
+/* Highlighter Toolbar */
+.bb-highlight-toolbar {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  padding: 6px;
+  display: flex;
+  gap: 6px;
+  animation: bbFadeIn 0.2s ease;
+}
+
+@keyframes bbFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.bb-hl-btn,
+.bb-hl-note-btn {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.bb-hl-btn:hover,
+.bb-hl-note-btn:hover {
+  transform: scale(1.1);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
+}
+
+.bb-hl-note-btn {
+  background: #f5f5f5;
+}
+
+/* Highlight Styles */
+.bb-highlight {
+  position: relative;
+  transition: all 0.2s;
+}
+
+.bb-highlight:hover {
+  filter: brightness(0.95);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.bb-highlight-with-note::after {
+  content: '💬';
+  font-size: 11px;
+  margin-left: 3px;
+  vertical-align: super;
+}
+
+/* Highlight Menu */
+.bb-highlight-menu {
+  background: white;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  padding: 4px;
+  min-width: 150px;
+  animation: bbFadeIn 0.2s ease;
+}
+
+.bb-menu-btn {
+  width: 100%;
+  padding: 8px 12px;
+  border: none;
+  background: white;
+  text-align: left;
+  cursor: pointer;
+  border-radius: 4px;
+  font-size: 14px;
+  transition: background 0.2s;
+}
+
+.bb-menu-btn:hover {
+  background: #f5f5f5;
+}
