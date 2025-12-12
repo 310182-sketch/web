@@ -75,6 +75,66 @@
     input:checked + .slider:before {
       transform: translateX(20px);
     }
+    .action-button {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 10px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .action-button:hover {
+      transform: translateY(-2px);
+    }
+    .action-button.active {
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    }
+    .section-title {
+      font-size: 14px;
+      font-weight: 600;
+      margin-top: 15px;
+      margin-bottom: 10px;
+      color: #2c3e50;
+    }
+    .read-later-list {
+      max-height: 150px;
+      overflow-y: auto;
+      background: white;
+      border-radius: 8px;
+      padding: 5px;
+    }
+    .read-later-item {
+      padding: 8px;
+      margin-bottom: 5px;
+      background: #f8f9fa;
+      border-radius: 5px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+    }
+    .read-later-item a {
+      color: #667eea;
+      text-decoration: none;
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .delete-btn {
+      background: #e74c3c;
+      color: white;
+      border: none;
+      padding: 3px 8px;
+      border-radius: 3px;
+      cursor: pointer;
+      font-size: 11px;
+    }
   </style>
 </head>
 <body>
@@ -102,6 +162,16 @@
       <input type="checkbox" id="readerMode">
       <span class="slider"></span>
     </label>
+  </div>
+
+  <div class="section-title">工具</div>
+  
+  <button class="action-button" id="zapperToggle">🎯 元素隱藏器</button>
+  <button class="action-button" id="savePageBtn">💾 加入稍後閱讀</button>
+
+  <div class="section-title">稍後閱讀清單</div>
+  <div class="read-later-list" id="readLaterList">
+    <div style="text-align: center; color: #999; padding: 20px;">清單為空</div>
   </div>
 
   <script src="popup.js"></script>

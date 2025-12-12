@@ -23,5 +23,16 @@ html.bb-dark-mode canvas {
   max-width: 800px !important;
   margin-left: auto !important;
   margin-right: auto !important;
-  color: #333 !important; /* Ensure text is readable */
+  color: #333 !important;
+}
+
+/* Element Zapper: Highlight on Hover */
+.bb-zapper-active * {
+  cursor: crosshair !important;
+}
+
+.bb-zapper-highlight {
+  outline: 3px solid red !important;
+  outline-offset: 2px !important;
+  background-color: rgba(255, 0, 0, 0.1) !important;
 }

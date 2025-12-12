@@ -1,12 +1,13 @@
 {
   "manifest_version": 3,
   "name": "Better Browse",
-  "version": "1.0",
-  "description": "Enhance your browsing experience with Focus, Dark, and Reader modes.",
+  "version": "1.5",
+  "description": "Enhance your browsing experience with Focus, Dark, Reader modes, Element Zapper, and Read Later.",
   "permissions": [
     "activeTab",
     "storage",
-    "scripting"
+    "scripting",
+    "contextMenus"
   ],
   "action": {
     "default_popup": "popup.html"
