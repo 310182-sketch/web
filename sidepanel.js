@@ -241,3 +241,271 @@ function renderNotesList(notes) {
     });
   });
 }
+
+// 載入剪貼簿歷史
+async function loadClipboard() {
+  const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+  if (!tabs[0]) return;
+
+  const results = await chrome.scripting.executeScript({
+    target: { tabId: tabs[0].id },
+    func: () => window.bbClipboard?.getHistory() || []
+  });
+
+  const history = results[0]?.result || [];
+  renderClipboard(history);
+}
+
+function renderClipboard(history) {
+  const clipboardList = document.getElementById('clipboardList');
+  const clipboardCount = document.getElementById('clipboardCount');
+  
+  clipboardCount.textContent = `${history.length} 條記錄`;
+
+  if (history.length === 0) {
+    clipboardList.innerHTML = '<div class="empty-state">尚無剪貼簿記錄<br><small>在網頁上複製文字即可自動儲存</small></div>';
+    return;
+  }
+
+  clipboardList.innerHTML = history.map((item, index) => {
+    const preview = item.text.substring(0, 200);
+    const hasMore = item.text.length > 200;
+    
+    return `
+      <div class="clipboard-item" data-id="${item.id}">
+        <div class="clipboard-text" data-full="${encodeURIComponent(item.text)}">
+          ${preview}${hasMore ? '...' : ''}
+        </div>
+        <div class="clipboard-source" title="${item.source.url}">
+          ${item.source.hostname}
+        </div>
+        <div class="clipboard-meta">
+          <span>${formatClipboardTime(item.timestamp)}</span>
+          <div class="clipboard-actions">
+            <button class="clipboard-copy-btn" title="複製">📋 複製</button>
+            <button class="clipboard-delete-btn" title="刪除">🗑️</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  // 綁定事件
+  clipboardList.querySelectorAll('.clipboard-item').forEach((item, index) => {
+    const clipItem = history[index];
+    const textDiv = item.querySelector('.clipboard-text');
+    
+    // 點擊展開/收起
+    textDiv.addEventListener('click', () => {
+      textDiv.classList.toggle('expanded');
+    });
+    
+    // 複製按鈕
+    item.querySelector('.clipboard-copy-btn').addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const btn = e.target;
+      const originalText = btn.textContent;
+      
+      try {
+        await navigator.clipboard.writeText(clipItem.text);
+        btn.textContent = '✓ 已複製';
+        btn.style.background = '#27ae60';
+        
+        setTimeout(() => {
+          btn.textContent = originalText;
+          btn.style.background = '';
+        }, 2000);
+      } catch (error) {
+        btn.textContent = '✗ 失敗';
+        btn.style.background = '#e74c3c';
+        
+        setTimeout(() => {
+          btn.textContent = originalText;
+          btn.style.background = '';
+        }, 2000);
+      }
+    });
+    
+    // 刪除按鈕
+    item.querySelector('.clipboard-delete-btn').addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (tabs[0]) {
+        await chrome.scripting.executeScript({
+          target: { tabId: tabs[0].id },
+          func: (id) => window.bbClipboard?.deleteItem(id),
+          args: [clipItem.id]
+        });
+        await loadClipboard();
+      }
+    });
+  });
+}
+
+async function clearClipboard() {
+  const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+  if (tabs[0]) {
+    await chrome.scripting.executeScript({
+      target: { tabId: tabs[0].id },
+      func: () => window.bbClipboard?.clearHistory()
+    });
+    await loadClipboard();
+  }
+}
+
+function formatClipboardTime(timestamp) {
+  const date = new Date(timestamp);
+  const now = Date.now();
+  const diff = now - timestamp;
+  
+  if (diff < 60000) return '剛剛';
+  if (diff < 3600000) return `${Math.floor(diff / 60000)} 分鐘前`;
+  if (diff < 86400000) return `${Math.floor(diff / 3600000)} 小時前`;
+  if (diff < 604800000) return `${Math.floor(diff / 86400000)} 天前`;
+  
+  return date.toLocaleDateString('zh-TW', { 
+    month: 'short', 
+    day: 'numeric'
+  });
+}
+
+// 載入高亮列表
+async function loadHighlights() {
+  const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+  if (!tabs[0]) return;
+
+  const results = await chrome.scripting.executeScript({
+    target: { tabId: tabs[0].id },
+    func: () => {
+      const currentUrl = window.location.href;
+      return window.bbHighlighter?.getHighlights(currentUrl) || [];
+    }
+  });
+
+  const highlights = results[0]?.result || [];
+  renderHighlights(highlights);
+}
+
+function renderHighlights(highlights) {
+  const highlightsList = document.getElementById('highlightsList');
+  const highlightsCount = document.getElementById('highlightsCount');
+  
+  highlightsCount.textContent = `${highlights.length} 個高亮`;
+
+  if (highlights.length === 0) {
+    highlightsList.innerHTML = '<div class="empty-state">尚無高亮標記<br><small>選取文字即可標記</small></div>';
+    return;
+  }
+
+  highlightsList.innerHTML = highlights.map((highlight, index) => {
+    const colorClass = `color-${highlight.color}`;
+    
+    return `
+      <div class="highlight-item ${colorClass}" data-id="${highlight.id}">
+        <div class="highlight-text">${highlight.text}</div>
+        ${highlight.note ? `<div class="highlight-note">📝 ${highlight.note}</div>` : ''}
+        <div class="highlight-meta">
+          <span>${NotesManager.formatTime(highlight.timestamp)}</span>
+          <div class="highlight-actions">
+            <button class="goto-highlight" title="跳轉">🔗</button>
+            <button class="delete-highlight" title="刪除">🗑️</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  // 綁定事件
+  highlightsList.querySelectorAll('.highlight-item').forEach((item, index) => {
+    const highlight = highlights[index];
+    
+    item.querySelector('.goto-highlight').addEventListener('click', async () => {
+      const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (tabs[0]) {
+        await chrome.scripting.executeScript({
+          target: { tabId: tabs[0].id },
+          func: (id) => window.bbHighlighter?.scrollToHighlight(id),
+          args: [highlight.id]
+        });
+      }
+    });
+
+    item.querySelector('.delete-highlight').addEventListener('click', async () => {
+      const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (tabs[0]) {
+        await chrome.scripting.executeScript({
+          target: { tabId: tabs[0].id },
+          func: (id) => window.bbHighlighter?.deleteHighlight(id),
+          args: [highlight.id]
+        });
+      }
+    });
+  });
+}
+
+// 載入摘要
+async function loadSummary() {
+  const summaryContent = document.getElementById('summaryContent');
+  const summaryStats = document.getElementById('summaryStats');
+  
+  const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+  if (!tabs[0]) return;
+
+  const currentUrl = tabs[0].url;
+  const result = await chrome.storage.local.get(['summaries']);
+  const summaries = result.summaries || {};
+  const summary = summaries[currentUrl];
+
+  if (summary) {
+    summaryContent.textContent = summary.summary;
+    summaryStats.innerHTML = `
+      壓縮率: ${summary.compressionRatio}% | 
+      原文字數: ${summary.originalLength.toLocaleString()} | 
+      摘要字數: ${summary.summaryLength.toLocaleString()}
+    `;
+  } else {
+    summaryContent.textContent = '尚無摘要';
+    summaryStats.textContent = '點擊「生成摘要」按鈕開始';
+  }
+}
+
+async function generateSummary() {
+  const btn = document.getElementById('generateSummaryBtn');
+  const summaryContent = document.getElementById('summaryContent');
+  const summaryStats = document.getElementById('summaryStats');
+  
+  btn.disabled = true;
+  btn.textContent = '⏳ 生成中...';
+  summaryContent.textContent = '正在分析網頁內容...';
+
+  try {
+    const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (!tabs[0]) return;
+
+    const results = await chrome.scripting.executeScript({
+      target: { tabId: tabs[0].id },
+      func: async () => {
+        return await window.bbSummarizer?.summarize();
+      }
+    });
+
+    const summary = results[0]?.result;
+    
+    if (summary) {
+      summaryContent.textContent = summary.summary;
+      summaryStats.innerHTML = `
+        壓縮率: ${summary.compressionRatio}% | 
+        原文字數: ${summary.originalLength.toLocaleString()} | 
+        摘要字數: ${summary.summaryLength.toLocaleString()}
+      `;
+    } else {
+      summaryContent.textContent = '生成失敗，請重試';
+    }
+  } catch (error) {
+    summaryContent.textContent = `錯誤: ${error.message}`;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '🤖 生成摘要';
+  }
+}
+
