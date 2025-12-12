@@ -256,8 +256,4 @@ class WorkspaceManager {
   }
 }
 
-// 初始化
-if (typeof window !== 'undefined') {
-  window.bbWorkspace = new WorkspaceManager();
-  window.bbWorkspace.init();
-}
+// Sidepanel 環境中使用，無需 window 初始化

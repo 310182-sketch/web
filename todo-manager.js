@@ -209,8 +209,4 @@ class TodoManager {
   }
 }
 
-// 初始化
-if (typeof window !== 'undefined') {
-  window.bbTodo = new TodoManager();
-  window.bbTodo.init();
-}
+// Sidepanel 環境中使用，無需 window 初始化

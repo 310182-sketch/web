@@ -1,9 +1,18 @@
 // Side Panel 筆記介面邏輯
 let currentUrl = '';
 let autoSaveTimer = null;
+let todoManager;
+let workspaceManager;
 
 // 初始化
 document.addEventListener('DOMContentLoaded', async () => {
+  // 初始化管理器
+  todoManager = new TodoManager();
+  await todoManager.init();
+  
+  workspaceManager = new WorkspaceManager();
+  await workspaceManager.init();
+  
   await loadCurrentPageInfo();
   setupEventListeners();
   await loadCurrentNote();
@@ -596,24 +605,16 @@ async function generateSummary() {
 // ===== 待辦事項功能 =====
 
 async function loadTodos(filter = 'all') {
-  const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
-  if (!tabs[0]) return;
+  let todos;
+  
+  if (filter === 'pending') {
+    todos = await todoManager.getPendingTodos();
+  } else if (filter === 'completed') {
+    todos = await todoManager.getCompletedTodos();
+  } else {
+    todos = await todoManager.getAllTodos();
+  }
 
-  const results = await chrome.scripting.executeScript({
-    target: { tabId: tabs[0].id },
-    func: async (filterType) => {
-      if (filterType === 'pending') {
-        return await window.bbTodo?.getPendingTodos() || [];
-      } else if (filterType === 'completed') {
-        return await window.bbTodo?.getCompletedTodos() || [];
-      } else {
-        return await window.bbTodo?.getAllTodos() || [];
-      }
-    },
-    args: [filter]
-  });
-
-  const todos = results[0]?.result || [];
   await renderTodos(todos);
   await updateTodoStats();
 }
@@ -658,45 +659,23 @@ function renderTodos(todos) {
     // 切換完成狀態
     item.querySelector('.todo-checkbox').addEventListener('click', async (e) => {
       e.stopPropagation();
-      const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
-      if (tabs[0]) {
-        await chrome.scripting.executeScript({
-          target: { tabId: tabs[0].id },
-          func: (id) => window.bbTodo?.toggleComplete(id),
-          args: [todo.id]
-        });
-        await loadTodos(document.querySelector('.filter-btn.active').dataset.filter);
-      }
+      await todoManager.toggleComplete(todo.id);
+      await loadTodos(document.querySelector('.filter-btn.active').dataset.filter);
     });
 
     // 刪除
     item.querySelector('.todo-delete-btn').addEventListener('click', async (e) => {
       e.stopPropagation();
       if (confirm('確定要刪除這個待辦事項嗎？')) {
-        const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
-        if (tabs[0]) {
-          await chrome.scripting.executeScript({
-            target: { tabId: tabs[0].id },
-            func: (id) => window.bbTodo?.deleteTodo(id),
-            args: [todo.id]
-          });
-          await loadTodos(document.querySelector('.filter-btn.active').dataset.filter);
-        }
+        await todoManager.deleteTodo(todo.id);
+        await loadTodos(document.querySelector('.filter-btn.active').dataset.filter);
       }
     });
   });
 }
 
 async function updateTodoStats() {
-  const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
-  if (!tabs[0]) return;
-
-  const results = await chrome.scripting.executeScript({
-    target: { tabId: tabs[0].id },
-    func: async () => window.bbTodo?.getStats()
-  });
-
-  const stats = results[0]?.result;
+  const stats = await todoManager.getStats();
   if (stats) {
     document.getElementById('todoStats').textContent = `${stats.pending} 待完成 / ${stats.total} 總計`;
   }
@@ -717,30 +696,17 @@ async function saveTodo() {
     dueDate: document.getElementById('todoDueDate').value || null
   };
 
-  const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
-  if (tabs[0]) {
-    await chrome.scripting.executeScript({
-      target: { tabId: tabs[0].id },
-      func: (data) => window.bbTodo?.addTodo(data),
-      args: [todoData]
-    });
+  await todoManager.addTodo(todoData);
 
-    document.getElementById('todoForm').classList.add('hidden');
-    document.querySelector('.todo-container').classList.remove('hidden');
-    clearTodoForm();
-    await loadTodos();
-  }
+  document.getElementById('todoForm').classList.add('hidden');
+  document.querySelector('.todo-container').classList.remove('hidden');
+  clearTodoForm();
+  await loadTodos();
 }
 
 async function clearCompletedTodos() {
-  const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
-  if (tabs[0]) {
-    await chrome.scripting.executeScript({
-      target: { tabId: tabs[0].id },
-      func: () => window.bbTodo?.clearCompleted()
-    });
-    await loadTodos();
-  }
+  await todoManager.clearCompleted();
+  await loadTodos();
 }
 
 function clearTodoForm() {
@@ -770,15 +736,7 @@ function formatTodoDate(date) {
 // ===== 工作區功能 =====
 
 async function loadWorkspaces() {
-  const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
-  if (!tabs[0]) return;
-
-  const results = await chrome.scripting.executeScript({
-    target: { tabId: tabs[0].id },
-    func: async () => window.bbWorkspace?.getAllWorkspaces() || []
-  });
-
-  const workspaces = results[0]?.result || [];
+  const workspaces = await workspaceManager.getAllWorkspaces();
   renderWorkspaces(workspaces);
 }
 
@@ -816,27 +774,13 @@ function renderWorkspaces(workspaces) {
     const workspace = workspaces[index];
     
     item.querySelector('.workspace-restore-btn').addEventListener('click', async () => {
-      const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
-      if (tabs[0]) {
-        await chrome.scripting.executeScript({
-          target: { tabId: tabs[0].id },
-          func: (id) => window.bbWorkspace?.restoreWorkspace(id, false),
-          args: [workspace.id]
-        });
-      }
+      await workspaceManager.restoreWorkspace(workspace.id, false);
     });
 
     item.querySelector('.workspace-delete-btn').addEventListener('click', async () => {
       if (confirm(`確定要刪除工作區「${workspace.name}」嗎？`)) {
-        const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
-        if (tabs[0]) {
-          await chrome.scripting.executeScript({
-            target: { tabId: tabs[0].id },
-            func: (id) => window.bbWorkspace?.deleteWorkspace(id),
-            args: [workspace.id]
-          });
-          await loadWorkspaces();
-        }
+        await workspaceManager.deleteWorkspace(workspace.id);
+        await loadWorkspaces();
       }
     });
   });
@@ -856,19 +800,12 @@ async function saveWorkspace() {
 
   const description = document.getElementById('workspaceDescription').value.trim();
 
-  const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
-  if (tabs[0]) {
-    await chrome.scripting.executeScript({
-      target: { tabId: tabs[0].id },
-      func: (name, desc) => window.bbWorkspace?.saveCurrentWorkspace(name, desc),
-      args: [name, description]
-    });
+  await workspaceManager.saveCurrentWorkspace(name, description);
 
-    document.getElementById('workspaceForm').classList.add('hidden');
-    document.querySelector('.workspace-container').classList.remove('hidden');
-    clearWorkspaceForm();
-    await loadWorkspaces();
-  }
+  document.getElementById('workspaceForm').classList.add('hidden');
+  document.querySelector('.workspace-container').classList.remove('hidden');
+  clearWorkspaceForm();
+  await loadWorkspaces();
 }
 
 function clearWorkspaceForm() {

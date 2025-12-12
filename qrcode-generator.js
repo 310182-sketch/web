@@ -168,7 +168,5 @@ class QRCodeGenerator {
   }
 }
 
-// 初始化
-if (typeof window !== 'undefined') {
-  window.bbQRCode = new QRCodeGenerator();
-}
+// Sidepanel 環境中無需 window 檢查
+// 直接用於工具功能

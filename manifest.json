@@ -27,7 +27,7 @@
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["todo-manager.js", "workspace-manager.js", "formatter.js", "qrcode-generator.js", "clipboard-manager.js", "highlighter.js", "summarizer.js", "notes-manager.js", "content.js"],
+      "js": ["clipboard-manager.js", "highlighter.js", "summarizer.js", "notes-manager.js", "content.js"],
       "css": ["content.css", "highlighter.css"]
     }
   ]
