@@ -1,7 +1,7 @@
 // Side Panel 筆記介面邏輯
 let currentUrl = '';
 let autoSaveTimer = null;
-let todoManager;
+let todoManager = null;
 let workspaceManager;
 let tabSuspender;
 let extensionsManager;
