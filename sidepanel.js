@@ -208,7 +208,6 @@ function setupEventListeners() {
       }
     });
   }
-
   // 分頁休眠：休眠目前分頁
   const suspendCurrentBtn = document.getElementById('suspendCurrentTab');
   if (suspendCurrentBtn) {
@@ -241,7 +240,7 @@ function setupEventListeners() {
 }
 
 // 切換 Tab
-function switchTab(tab) {
+async function switchTab(tab) {
   document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.tab === tab);
   });
@@ -267,6 +266,8 @@ function switchTab(tab) {
     loadSuspenderSettings();
   } else if (tab === 'extensions') {
     await loadExtensions('');
+  } else if (tab === 'groups') {
+    await loadGroups();
   } else if (tab === 'tools') {
     // 工具標籤無需載入
   }
@@ -274,7 +275,6 @@ function switchTab(tab) {
 
 // 載入當前頁面筆記
 async function loadCurrentNote() {
-    await loadGroups();
   if (!currentUrl) return;
 
   const note = await NotesManager.getCurrentNote(currentUrl);
@@ -1029,8 +1029,11 @@ if (createGroupBtn) {
     }
   });
 }
+// 載入分頁群組列表
+async function loadGroups() {
   const groups = await workspaceManager.listTabGroups();
   const listEl = document.getElementById('groupsList');
+  if (!listEl) return;
   if (!groups || groups.length === 0) {
     listEl.innerHTML = '<div class="empty-state">尚無分頁群組</div>';
     return;
@@ -1049,7 +1052,9 @@ if (createGroupBtn) {
 
   listEl.querySelectorAll('.note-item').forEach(item => {
     const id = Number(item.dataset.id);
-    item.querySelector('.toggle-collapse').addEventListener('click', async () => {
+    const btn = item.querySelector('.toggle-collapse');
+    if (!btn) return;
+    btn.addEventListener('click', async () => {
       const g = groups.find(x => x.id === id);
       const ok = await workspaceManager.updateTabGroup(id, { collapsed: !g.collapsed });
       if (ok) {
