@@ -28,10 +28,13 @@
         <div class="tab-group-label">生產力</div>
         <button class="tab-btn" data-tab="todo">✓ 待辦</button>
         <button class="tab-btn" data-tab="workspace">📂 工作區</button>
+        <button class="tab-btn" data-tab="suspend">🛌 休眠</button>
+        <button class="tab-btn" data-tab="groups">🗂️ 群組</button>
       </div>
       <div class="tab-group">
         <div class="tab-group-label">工具</div>
         <button class="tab-btn" data-tab="tools">🔧 工具</button>
+        <button class="tab-btn" data-tab="extensions">🧩 擴充管理</button>
       </div>
     </nav>
 
@@ -166,6 +169,63 @@
       </div>
     </div>
 
+    <div class="tab-content hidden" id="groupsTab">
+      <div class="tools-container">
+        <div class="tool-section">
+          <h3>🗂️ 分頁群組</h3>
+          <div class="tool-actions">
+            <input type="text" id="groupTitle" placeholder="群組標題" />
+            <select id="groupColor">
+              <option value="grey">灰</option>
+              <option value="blue" selected>藍</option>
+              <option value="red">紅</option>
+              <option value="yellow">黃</option>
+              <option value="green">綠</option>
+              <option value="pink">粉</option>
+              <option value="purple">紫</option>
+            </select>
+            <label><input type="checkbox" id="groupCollapsed" /> 折疊</label>
+            <button id="createGroupBtn" class="toolbar-btn">➕ 建立（所有分頁）</button>
+          </div>
+        </div>
+        <div class="tool-section">
+          <h3>📜 目前群組</h3>
+          <div id="groupsList" class="notes-list"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tab-content hidden" id="suspendTab">
+      <div class="tools-container">
+        <div class="tool-section">
+          <h3>🛌 分頁休眠設定</h3>
+          <div class="tool-actions">
+            <label>
+              閾值（分鐘）：
+              <select id="suspendThreshold">
+                <option value="10">10</option>
+                <option value="20" selected>20</option>
+                <option value="30">30</option>
+                <option value="45">45</option>
+                <option value="60">60</option>
+              </select>
+            </label>
+            <button id="saveSuspendThreshold" class="toolbar-btn">✔️ 儲存</button>
+            <button id="suspendCurrentTab" class="toolbar-btn-small">⏸️ 休眠目前分頁</button>
+            <button id="whitelistCurrentHost" class="toolbar-btn-small">⭐ 將目前站點加入白名單</button>
+          </div>
+        </div>
+        <div class="tool-section">
+          <h3>🧾 白名單主機</h3>
+          <div class="tool-actions">
+            <input type="text" id="whitelistHostInput" placeholder="輸入主機名，例如: mail.google.com" />
+            <button id="addWhitelistHost" class="toolbar-btn">➕ 加入</button>
+          </div>
+          <div id="whitelistList" class="notes-list"></div>
+        </div>
+      </div>
+    </div>
+
     <div class="tab-content hidden" id="toolsTab">
       <div class="tools-container">
         <div class="tool-section">
@@ -199,6 +259,19 @@
       </div>
     </div>
 
+    <div class="tab-content hidden" id="extensionsTab">
+      <div class="tools-container">
+        <div class="tool-section">
+          <h3>🧩 擴充功能管理</h3>
+          <div class="tool-actions">
+            <input type="text" id="extensionsSearch" placeholder="搜尋擴充功能..." />
+            <button id="extensionsRefresh" class="toolbar-btn">🔄 重新載入</button>
+          </div>
+          <div id="extensionsList" class="notes-list"></div>
+        </div>
+      </div>
+    </div>
+
     <div class="tab-content hidden" id="allTab">
       <div class="notes-list-header">
         <input type="text" id="searchNotes" placeholder="🔍 搜尋筆記..." />
@@ -212,6 +285,8 @@
 
   <script src="todo-manager.js"></script>
   <script src="workspace-manager.js"></script>
+  <script src="tab-suspender.js"></script>
+  <script src="extensions-manager.js"></script>
   <script src="formatter.js"></script>
   <script src="qrcode-generator.js"></script>
   <script src="notes-manager.js"></script>

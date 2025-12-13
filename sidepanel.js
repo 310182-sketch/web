@@ -3,6 +3,8 @@ let currentUrl = '';
 let autoSaveTimer = null;
 let todoManager;
 let workspaceManager;
+let tabSuspender;
+let extensionsManager;
 
 // 初始化
 document.addEventListener('DOMContentLoaded', async () => {
@@ -12,6 +14,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   
   workspaceManager = new WorkspaceManager();
   await workspaceManager.init();
+  
+  // 初始化分頁休眠控制器
+  tabSuspender = new TabSuspender();
+  await tabSuspender.init();
+
+  // 初始化擴充管理器
+  extensionsManager = new ExtensionsManager();
+  await extensionsManager.init();
   
   await loadCurrentPageInfo();
   setupEventListeners();
@@ -171,6 +181,63 @@ function setupEventListeners() {
   document.getElementById('downloadQRBtn').addEventListener('click', () => {
     downloadQR();
   });
+
+  // 分頁休眠：儲存閾值
+  const saveSuspendBtn = document.getElementById('saveSuspendThreshold');
+  if (saveSuspendBtn) {
+    saveSuspendBtn.addEventListener('click', async () => {
+      const minutes = Number(document.getElementById('suspendThreshold').value);
+      const ok = await tabSuspender.setThreshold(minutes);
+      alert(ok ? '已更新休眠閾值' : '更新失敗');
+    });
+  }
+
+  // 分頁休眠：新增白名單主機
+  const addWhitelistBtn = document.getElementById('addWhitelistHost');
+  if (addWhitelistBtn) {
+    addWhitelistBtn.addEventListener('click', async () => {
+      const input = document.getElementById('whitelistHostInput');
+      const host = input.value.trim();
+      if (!host) return;
+      const ok = await tabSuspender.addWhitelistHost(host);
+      if (ok) {
+        input.value = '';
+        await loadSuspenderSettings();
+      } else {
+        alert('加入失敗');
+      }
+    });
+  }
+
+  // 分頁休眠：休眠目前分頁
+  const suspendCurrentBtn = document.getElementById('suspendCurrentTab');
+  if (suspendCurrentBtn) {
+    suspendCurrentBtn.addEventListener('click', async () => {
+      const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (tabs[0]?.id) {
+        const ok = await tabSuspender.manualSuspend(tabs[0].id);
+        alert(ok ? '已休眠目前分頁' : '休眠失敗');
+      }
+    });
+  }
+
+  // 分頁休眠：將目前站點加入白名單
+  const whitelistCurrentBtn = document.getElementById('whitelistCurrentHost');
+  if (whitelistCurrentBtn) {
+    whitelistCurrentBtn.addEventListener('click', async () => {
+      const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (tabs[0]?.url) {
+        const host = new URL(tabs[0].url).hostname;
+        const ok = await tabSuspender.addWhitelistHost(host);
+        if (ok) {
+          await loadSuspenderSettings();
+          alert(`已加入白名單：${host}`);
+        } else {
+          alert('加入失敗');
+        }
+      }
+    });
+  }
 }
 
 // 切換 Tab
@@ -196,6 +263,10 @@ function switchTab(tab) {
   } else if (tab === 'workspace') {
     loadWorkspaces();
     updateCurrentWindowInfo();
+  } else if (tab === 'suspend') {
+    loadSuspenderSettings();
+  } else if (tab === 'extensions') {
+    await loadExtensions('');
   } else if (tab === 'tools') {
     // 工具標籤無需載入
   }
@@ -203,6 +274,7 @@ function switchTab(tab) {
 
 // 載入當前頁面筆記
 async function loadCurrentNote() {
+    await loadGroups();
   if (!currentUrl) return;
 
   const note = await NotesManager.getCurrentNote(currentUrl);
@@ -358,6 +430,21 @@ function renderClipboard(history) {
   if (history.length === 0) {
     clipboardList.innerHTML = '<div class="empty-state">尚無剪貼簿記錄<br><small>在網頁上複製文字即可自動儲存</small></div>';
     return;
+  }
+
+  // 擴充管理事件
+  const extSearch = document.getElementById('extensionsSearch');
+  if (extSearch) {
+    extSearch.addEventListener('input', async (e) => {
+      await loadExtensions(e.target.value);
+    });
+  }
+  const extRefresh = document.getElementById('extensionsRefresh');
+  if (extRefresh) {
+    extRefresh.addEventListener('click', async () => {
+      await extensionsManager.refresh();
+      await loadExtensions(document.getElementById('extensionsSearch')?.value || '');
+    });
   }
 
   clipboardList.innerHTML = history.map((item, index) => {
@@ -925,6 +1012,139 @@ function downloadQR() {
   link.href = currentQRDataUrl;
   link.download = 'qrcode.png';
   link.click();
+}
+
+// 群組事件：建立群組
+const createGroupBtn = document.getElementById('createGroupBtn');
+if (createGroupBtn) {
+  createGroupBtn.addEventListener('click', async () => {
+    const title = document.getElementById('groupTitle').value.trim() || '工作群組';
+    const color = document.getElementById('groupColor').value;
+    const collapsed = document.getElementById('groupCollapsed').checked;
+    const id = await workspaceManager.createTabGroup({ title, color, collapsed });
+    if (id) {
+      await loadGroups();
+    } else {
+      alert('建立群組失敗');
+    }
+  });
+}
+  const groups = await workspaceManager.listTabGroups();
+  const listEl = document.getElementById('groupsList');
+  if (!groups || groups.length === 0) {
+    listEl.innerHTML = '<div class="empty-state">尚無分頁群組</div>';
+    return;
+  }
+  listEl.innerHTML = groups.map(g => `
+    <div class="note-item" data-id="${g.id}">
+      <div class="note-item-url">${g.title || '(未命名群組)'} · 顏色: ${g.color}</div>
+      <div class="note-item-meta">
+        <span>${g.collapsed ? '已折疊' : '展開中'}</span>
+        <div class="note-item-actions">
+          <button class="toggle-collapse">${g.collapsed ? '展開' : '折疊'}</button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+
+  listEl.querySelectorAll('.note-item').forEach(item => {
+    const id = Number(item.dataset.id);
+    item.querySelector('.toggle-collapse').addEventListener('click', async () => {
+      const g = groups.find(x => x.id === id);
+      const ok = await workspaceManager.updateTabGroup(id, { collapsed: !g.collapsed });
+      if (ok) {
+        await loadGroups();
+      } else {
+        alert('更新失敗');
+      }
+    });
+  });
+}
+
+// ===== 擴充管理 =====
+async function loadExtensions(query) {
+  const listEl = document.getElementById('extensionsList');
+  const items = extensionsManager.list(query);
+  if (!items || items.length === 0) {
+    listEl.innerHTML = '<div class="empty-state">未找到擴充功能</div>';
+    return;
+  }
+
+  listEl.innerHTML = items.map(ext => `
+    <div class="note-item" data-id="${ext.id}">
+      <div class="note-item-url">${ext.name}</div>
+      <div class="note-item-preview">ID: ${ext.id} · 版本: ${ext.version}</div>
+      <div class="note-item-meta">
+        <span>${ext.enabled ? '啟用中' : '已停用'}</span>
+        <div class="note-item-actions">
+          <button class="toggle-ext">${ext.enabled ? '⏸️ 停用' : '▶️ 啟用'}</button>
+          <button class="fav-ext" title="收藏">${extensionsManager.isFavorite(ext.id) ? '⭐' : '☆'}</button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+
+  listEl.querySelectorAll('.note-item').forEach((item) => {
+    const id = item.dataset.id;
+    item.querySelector('.toggle-ext').addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const ok = await extensionsManager.toggle(id);
+      if (ok) {
+        await loadExtensions(document.getElementById('extensionsSearch')?.value || '');
+      } else {
+        alert('操作失敗');
+      }
+    });
+    item.querySelector('.fav-ext').addEventListener('click', async (e) => {
+      e.stopPropagation();
+      if (extensionsManager.isFavorite(id)) {
+        await extensionsManager.removeFavorite(id);
+      } else {
+        await extensionsManager.addFavorite(id);
+      }
+      await loadExtensions(document.getElementById('extensionsSearch')?.value || '');
+    });
+  });
+}
+
+// ===== 分頁休眠 =====
+async function loadSuspenderSettings() {
+  const state = await tabSuspender.refreshState();
+  const thresholdSelect = document.getElementById('suspendThreshold');
+  if (thresholdSelect) {
+    thresholdSelect.value = String(state.suspendThresholdMinutes);
+  }
+
+  const list = document.getElementById('whitelistList');
+  if (!list) return;
+  const items = state.whitelistHosts || [];
+  if (items.length === 0) {
+    list.innerHTML = '<div class="empty-state">尚無白名單主機</div>';
+    return;
+  }
+  list.innerHTML = items.map(host => `
+    <div class="note-item">
+      <div class="note-item-url">${host}</div>
+      <div class="note-item-meta">
+        <span>允許常駐</span>
+        <div class="note-item-actions">
+          <button class="remove-host" data-host="${host}" title="移除">🗑️</button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+
+  list.querySelectorAll('.remove-host').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      const host = e.target.dataset.host;
+      const ok = await tabSuspender.removeWhitelistHost(host);
+      if (ok) {
+        await loadSuspenderSettings();
+      } else {
+        alert('移除失敗');
+      }
+    });
+  });
 }
 
 

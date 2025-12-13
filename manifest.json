@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Better Browse",
-  "version": "2.7.1",
+  "version": "2.8.0",
   "description": "Enhance your browsing experience with Focus, Dark, Reader modes, Notes, Highlights, AI Summary, Clipboard History, Todo Management, Developer Tools, and Workspace Manager.",
   "permissions": [
     "activeTab",
@@ -13,11 +13,20 @@
     "clipboardRead",
     "clipboardWrite",
     "tabs",
-    "windows"
+    "windows",
+    "alarms",
+    "idle",
+    "management",
+    "tabGroups",
+    "sessions"
   ],
   "host_permissions": [
     "<all_urls>"
   ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
   "action": {
     "default_popup": "popup.html"
   },

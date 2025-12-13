@@ -254,6 +254,55 @@ class WorkspaceManager {
   notifyUpdate() {
     window.postMessage({ type: 'BB_WORKSPACE_UPDATED' }, '*');
   }
+
+  // ===== Tab Groups 功能 =====
+  // 建立群組（將當前視窗的所有分頁或指定分頁加入群組）
+  async createTabGroup(options = {}) {
+    const { title = '工作群組', color = 'blue', collapsed = false, tabIds = null } = options;
+    const tabs = tabIds ? tabIds.map(id => ({ id })) : await chrome.tabs.query({ currentWindow: true });
+    const ids = tabIds ? tabIds : tabs.map(t => t.id).filter(Boolean);
+    if (!ids || ids.length === 0) return null;
+
+    try {
+      const groupId = await chrome.tabs.group({ tabIds: ids });
+      await chrome.tabGroups.update(groupId, { title, color, collapsed });
+      return groupId;
+    } catch (e) {
+      console.error('Failed to create tab group:', e);
+      return null;
+    }
+  }
+
+  // 更新群組屬性
+  async updateTabGroup(groupId, updates = {}) {
+    try {
+      await chrome.tabGroups.update(groupId, updates);
+      return true;
+    } catch (e) {
+      console.error('Failed to update tab group:', e);
+      return false;
+    }
+  }
+
+  // 列出目前視窗所有群組
+  async listTabGroups() {
+    try {
+      const groups = await chrome.tabGroups.query({});
+      return groups;
+    } catch (e) {
+      return [];
+    }
+  }
+
+  // 將選定分頁加入指定群組
+  async addTabsToGroup(groupId, tabIds) {
+    try {
+      await chrome.tabs.group({ groupId, tabIds });
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
 }
 
 // Sidepanel 環境中使用，無需 window 初始化
